@@ -1,0 +1,19 @@
+# Core Web Framework
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+
+# Document handling
+python-docx==1.1.0
+docxtpl==0.16.7
+pandas==2.2.1
+openpyxl==3.1.2  # Required for Excel parsing
+
+# AI Integration
+openai==1.24.1
+
+# Config / Environment
+python-dotenv==1.0.1
+
+# Optional for async file handling
+aiofiles==23.2.1
+.env
