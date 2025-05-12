@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-log.txt
+*.log
+
+# Environment
+.env
+*.env
+
+# Virtualenv
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+*.pyc
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# FastAPI / Uvicorn specific
+*.db
+*.sqlite3
+
+# Document files
+app/data/input/
+app/data/output/
+*.docx
+*.pdf
+*.xlsx
+
+# Node.js (for future frontend)
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Frontend build
+frontend/build/
+frontend/dist/
+frontend/.next/
