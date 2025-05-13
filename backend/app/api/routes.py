@@ -6,6 +6,13 @@ from app.services.excel_generator import fill_ncd_mis_excel
 from backend.app.parser.alpha_doc_parser import extract_term_sheet_data
 import os
 
+from app.services.run_transformation import run_graph_async
+import uuid
+from slowapi.util import get_remote_address
+from fastapi import File
+from fastapi.responses import FileResponse
+
+
 router = APIRouter()
 
 @router.post("/generate/")
@@ -39,6 +46,36 @@ async def generate(
         "output_path": output_file_path,
         "data_used": term_data  # Optional, useful for debugging/testing
     }
+
+#langgraph transformed to an async api
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@router.post("/run-transformation")
+@limiter.limit("10/minute")
+async def run_transformation(alpha: UploadFile = File(...), beta_word: UploadFile = File(...), beta_excel: UploadFile = File(...)):
+    # Save uploaded files temporarily
+    def save_temp_file(file: UploadFile) -> str:
+        path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_{file.filename}")
+        with open(path, "wb") as f:
+            f.write(file.file.read())
+        return path
+
+    alpha_path = save_temp_file(alpha)
+    beta_word_path = save_temp_file(beta_word)
+    beta_excel_path = save_temp_file(beta_excel)
+
+    try:
+        result = await run_graph_async(alpha_path, beta_word_path, beta_excel_path)
+        return JSONResponse(content=result)
+    finally:
+        # Optional cleanup
+        for path in [alpha_path, beta_word_path, beta_excel_path]:
+            try:
+                os.remove(path)
+            except Exception as e:
+                print(f"Warning: failed to delete {path}: {e}")
+
 
 @router.get("/")
 async def root():
