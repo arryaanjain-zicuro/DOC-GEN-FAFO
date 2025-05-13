@@ -1,30 +1,36 @@
-import os
+import os, re, json, time
 import openpyxl
-from openai import OpenAI
 from dotenv import load_dotenv
+from typing import Dict, Any, List
+import google.generativeai as genai
+from app.core.gemini_rate_limiter import GeminiRateLimiter
 
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "your-api-key"))
-import json
-from typing import Dict, Any, List
-from ratelimit import limits, sleep_and_retry
 
-# Set OpenAI key
+# Initialize Gemini API
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
+model = genai.GenerativeModel("gemini-2.0-flash")
+
+# Set rate-limiting parameters
 CALLS = 20
 RATE_LIMIT = 60  # seconds
 
-@sleep_and_retry
-@limits(calls=CALLS, period=RATE_LIMIT)
-def call_gpt(prompt: str) -> Dict[str, Any]:
-    response = client.chat.completions.create(model="gpt-3.5-turbo",
-    messages=[{"role": "user", "content": prompt}],
-    max_tokens=1200,
-    temperature=0.3)
-    try:
-        return json.loads(response.choices[0].message.content)
-    except json.JSONDecodeError:
-        raise ValueError("Could not parse GPT response:\n" + response.choices[0].message.content)
+# Custom rate limiter for Gemini
+rate_limiter = GeminiRateLimiter(rate_limit_per_minute=CALLS)
+
+def send_to_gemini(prompt: str, retries: int = 5) -> str:
+    """Send request to Gemini with rate limiting."""
+    for attempt in range(retries):
+        try:
+            rate_limiter.wait()  # Throttle before sending request
+            response = model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            print(f"[Attempt {attempt + 1}] Gemini error: {e}")
+            if attempt == retries - 1:
+                raise
+            time.sleep(2)  # fixed delay between retries
 
 def extract_excel_content(excel_file: str) -> Dict[str, List[List[str]]]:
     """Extract content from all sheets of an Excel file."""
@@ -39,15 +45,18 @@ def extract_excel_content(excel_file: str) -> Dict[str, List[List[str]]]:
         content[sheet] = rows
     return content
 
-def analyze_excel_against_alpha(alpha_analysis: Dict[str, Any], beta_excel_data: Dict[str, Any]) -> Dict[str, Any]:
-    prompt = f"""
+def build_comparison_prompt(alpha_analysis: Dict[str, Any], beta_excel_data: Dict[str, Any]) -> str:
+    """Construct the comparison prompt for Gemini."""
+    alpha_fields = json.dumps(alpha_analysis['fields'], indent=2)
+    beta_raw = json.dumps(beta_excel_data, indent=2)
+    return f"""
 You are an AI system comparing ALPHA fields with a BETA Excel sheet.
 
 Alpha (base template) fields:
-{json.dumps(alpha_analysis['fields'], indent=2)}
+{alpha_fields}
 
 Beta (Excel) content:
-{json.dumps(beta_excel_data, indent=2)}
+{beta_raw}
 
 Your tasks:
 1. Identify which ALPHA fields are reused in BETA Excel.
@@ -58,9 +67,23 @@ Your tasks:
     - "unmatched_beta_cells": List of unlinked cells
     - "transformation_notes": Summary of any formulas or logic
 """
-    return call_gpt(prompt)
+
+def analyze_excel_against_alpha(alpha_analysis: Dict[str, Any], beta_excel_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Send Gemini prompt with alpha fields and beta Excel data to analyze patterns."""
+    prompt = build_comparison_prompt(alpha_analysis, beta_excel_data)
+    gemini_response = send_to_gemini(prompt)
+    cleaned_response = re.sub(r"^```json\s*|\s*```$", "", gemini_response.strip())
+
+    # Now safely parse the JSON
+    try:
+        parsed_result = json.loads(cleaned_response)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in Gemini response: {e}")
+    
+    return parsed_result
 
 def parse_beta_excel(excel_path: str, alpha_analysis: Dict[str, Any]) -> Dict[str, Any]:
+    """End-to-end parse of beta Excel document and comparison with alpha."""
     beta_data = extract_excel_content(excel_path)
     mapping_result = analyze_excel_against_alpha(alpha_analysis, beta_data)
 
@@ -81,7 +104,7 @@ def parse_beta_excel(excel_path: str, alpha_analysis: Dict[str, Any]) -> Dict[st
 #     alpha_path = sys.argv[1]
 #     beta_excel_path = sys.argv[2]
 
-#     alpha = parse_alpha_document(alpha_path)["gpt_analysis"]
+#     alpha = parse_alpha_document(alpha_path)["gemini_analysis"]
 #     result = parse_beta_excel(beta_excel_path, alpha)
 
 #     print("\n=== Excel Mappings ===")

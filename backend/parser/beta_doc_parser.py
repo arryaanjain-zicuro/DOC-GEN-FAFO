@@ -1,34 +1,36 @@
-import os
+import os, re, json, time
 from docx import Document
-from openai import OpenAI
 from dotenv import load_dotenv
+from typing import Dict, Any
+import google.generativeai as genai
+from app.core.gemini_rate_limiter import GeminiRateLimiter
 
 load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "your-api-key"))
-import json
-import time
-from typing import Dict, Any, List
-from ratelimit import limits, sleep_and_retry
+# Initialize Gemini API
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# Set OpenAI key
+model = genai.GenerativeModel("gemini-2.0-flash")
 
-# gpt-3.5-turbo rate limit (e.g., 20 requests per minute)
+# Set rate-limiting parameters (adjust as needed)
 CALLS = 20
 RATE_LIMIT = 60  # seconds
 
-@sleep_and_retry
-@limits(calls=CALLS, period=RATE_LIMIT)
-def call_gpt(prompt: str) -> Dict[str, Any]:
-    """Send request to GPT with rate limiting."""
-    response = client.chat.completions.create(model="gpt-3.5-turbo",
-    messages=[{"role": "user", "content": prompt}],
-    max_tokens=1200,
-    temperature=0.3)
-    try:
-        return json.loads(response.choices[0].message.content)
-    except json.JSONDecodeError:
-        raise ValueError("Could not parse GPT response:\n" + response.choices[0].message.content)
+# Custom rate limiter for Gemini
+rate_limiter = GeminiRateLimiter(rate_limit_per_minute=CALLS)
+
+def send_to_gemini(prompt: str, retries: int = 5) -> str:
+    """Send request to Gemini with rate limiting."""
+    for attempt in range(retries):
+        try:
+            rate_limiter.wait()  # Throttle before sending request
+            response = model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            print(f"[Attempt {attempt + 1}] Gemini error: {e}")
+            if attempt == retries - 1:
+                raise
+            time.sleep(2)  # fixed delay between retries
 
 def extract_beta_word(docx_file: str) -> Dict[str, Any]:
     """Extract tables and paragraphs from a beta Word document."""
@@ -52,16 +54,18 @@ def extract_beta_word(docx_file: str) -> Dict[str, Any]:
         "paragraphs": paragraphs,
     }
 
-def analyze_beta_against_alpha(alpha_analysis: Dict[str, Any], beta_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Send GPT prompt with alpha fields and beta data to analyze patterns."""
-    prompt = f"""
+def build_comparison_prompt(alpha_analysis: Dict[str, Any], beta_data: Dict[str, Any]) -> str:
+    """Construct the comparison prompt for Gemini."""
+    alpha_fields = json.dumps(alpha_analysis['fields'], indent=2)
+    beta_raw = json.dumps(beta_data, indent=2)
+    return f"""
 You are an AI system that compares an ALPHA document to a BETA document.
 
 Alpha (base template) fields:
-{json.dumps(alpha_analysis['fields'], indent=2)}
+{alpha_fields}
 
 Beta (transformed version) raw content:
-{json.dumps(beta_data, indent=2)}
+{beta_raw}
 
 Your tasks:
 1. Identify which ALPHA fields are reused in BETA.
@@ -73,7 +77,19 @@ Your tasks:
     - "transformation_notes": Any pattern notes (e.g., formulas, formatting)
 """
 
-    return call_gpt(prompt)
+def analyze_beta_against_alpha(alpha_analysis: Dict[str, Any], beta_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Send Gemini prompt with alpha fields and beta data to analyze patterns."""
+    prompt = build_comparison_prompt(alpha_analysis, beta_data)
+    gemini_response = send_to_gemini(prompt)
+    cleaned_response = re.sub(r"^```json\s*|\s*```$", "", gemini_response.strip())
+
+    # Now safely parse the JSON
+    try:
+        parsed_result = json.loads(cleaned_response)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in Gemini response: {e}")
+    
+    return parsed_result
 
 def parse_beta_document(beta_path: str, alpha_analysis: Dict[str, Any]) -> Dict[str, Any]:
     """End-to-end parse of beta document and comparison with alpha."""
@@ -85,7 +101,7 @@ def parse_beta_document(beta_path: str, alpha_analysis: Dict[str, Any]) -> Dict[
         "mapping_result": mapping_result
     }
 
-# Usage example
+# Example usage
 # if __name__ == "__main__":
 #     import sys
 #     from backend.app.parser.alpha_doc_parser import parse_alpha_document
@@ -97,7 +113,7 @@ def parse_beta_document(beta_path: str, alpha_analysis: Dict[str, Any]) -> Dict[
 #     alpha_path = sys.argv[1]
 #     beta_path = sys.argv[2]
 
-#     alpha = parse_alpha_document(alpha_path)["gpt_analysis"]
+#     alpha = parse_alpha_document(alpha_path)["gemini_analysis"]
 #     result = parse_beta_document(beta_path, alpha)
 
 #     print("\n=== Beta Mappings ===")
