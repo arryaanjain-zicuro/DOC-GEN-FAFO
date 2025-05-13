@@ -21,6 +21,9 @@ ENV/
 env.bak/
 *.pyc
 
+#data folder
+backend/app/data/output/* 
+
 # IDEs
 .vscode/
 .idea/
