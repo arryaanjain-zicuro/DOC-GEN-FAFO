@@ -1,12 +1,10 @@
-# app/api/routes.py
 from fastapi import APIRouter, UploadFile, Form, File, Request
 from app.services.document_generator import generate_document
-from app.core.limiter import limiter
-from parser.alpha_doc_parser import parse_alpha_document, test_openai
+from app.core.limiter import limiter  # You can remove this import if you don't need it anymore
+from parser.alpha_doc_parser import parse_alpha_document, test_gemini
 import os, uuid
 
 from app.services.run_transformation import run_graph_async
-from slowapi.util import get_remote_address
 from fastapi.responses import JSONResponse, FileResponse
 
 from app.services.excel_generator import fill_excel_generic
@@ -18,7 +16,6 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 @router.post("/generate")
-@limiter.limit("5/minute")
 async def generate_document(
     request: Request,
     alpha_doc: UploadFile = File(...),
@@ -37,7 +34,7 @@ async def generate_document(
     try:
         # Parse alpha document (Word)
         parsed_result = parse_alpha_document(alpha_path)
-        gpt_fields = parsed_result["gpt_analysis"]["fields"]
+        gpt_fields = parsed_result["gemini_analysis"]["fields"]
 
         # Fill Excel template
         output_file_path = os.path.join(
@@ -61,7 +58,6 @@ UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/run-transformation")
-@limiter.limit("10/minute")
 async def run_transformation(request: Request, alpha: UploadFile = File(...), beta_word: UploadFile = File(...), beta_excel: UploadFile = File(...)):
     # Save uploaded files temporarily
     def save_temp_file(file: UploadFile) -> str:
@@ -85,9 +81,9 @@ async def run_transformation(request: Request, alpha: UploadFile = File(...), be
             except Exception as e:
                 print(f"Warning: failed to delete {path}: {e}")
 
-@router.get("/test-openai")
+@router.get("/test-gemini")
 async def run_test_openai():
-    return await test_openai()
+    return await test_gemini()
 
 @router.get("/")
 async def root():
