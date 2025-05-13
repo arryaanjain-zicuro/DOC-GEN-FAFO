@@ -9,7 +9,7 @@ pandas==2.2.1
 openpyxl==3.1.2  # Required for Excel parsing
 
 # AI Integration
-openai==1.24.1
+openai==1.78.1
 
 # Config / Environment
 python-dotenv==1.0.1
@@ -20,3 +20,6 @@ slowapi
 python-multipart
 langgraph 
 langchain  
+
+ratelimit
+
