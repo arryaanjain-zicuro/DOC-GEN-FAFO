@@ -1,6 +1,8 @@
 import os
 from docx import Document
 from openai import OpenAI
+from openai.types.chat.chat_completion import ChatCompletion
+from openai._exceptions import RateLimitError, OpenAIError 
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -53,24 +55,26 @@ Return **only** the JSON.
 """
     return prompt
 
-def send_to_gpt(prompt: str) -> Dict[str, Any]:
-    """Send prompt to OpenAI GPT and parse as JSON."""
-    response = client.chat.completions.create(model="gpt-4",
-    messages=[
-        {"role": "user", "content": prompt}
-    ],
-    max_tokens=1200,
-    temperature=0.4)
+import time
+import openai
 
-    text_output = response.choices[0].message.content.strip()
-
-    # Attempt to parse JSON output from GPT
-    try:
-        parsed_output = json.loads(text_output)
-    except json.JSONDecodeError:
-        raise ValueError("Failed to parse GPT output as JSON:\n" + text_output)
-
-    return parsed_output
+# Modified function with retry logic and exponential backoff
+def send_to_gpt(prompt: str, retries: int = 5, delay: int = 5) -> ChatCompletion:
+    for attempt in range(retries):
+        try:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response
+        except RateLimitError:
+            print(f"[Attempt {attempt+1}] Rate limit exceeded, retrying in {delay} seconds...")
+            time.sleep(delay)
+            delay *= 2  # Exponential backoff
+        except OpenAIError as e:
+            print(f"[Attempt {attempt+1}] OpenAI error: {e}")
+            raise  # Optional: re-raise or return custom error
+    raise Exception("Max retries exceeded. Unable to complete the request.")
 
 def parse_alpha_document(docx_file_path: str) -> Dict[str, Any]:
     """Complete parser pipeline for alpha document."""
@@ -88,6 +92,19 @@ def parse_alpha_document(docx_file_path: str) -> Dict[str, Any]:
         "raw_data": extracted,
         "gpt_analysis": gpt_analysis
     }
+
+async def test_openai():
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "Say hello."}
+            ]
+        )
+        return {"status": "success", "response": response.choices[0].message.content}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
 
 # For CLI or script usage
 # if __name__ == "__main__":

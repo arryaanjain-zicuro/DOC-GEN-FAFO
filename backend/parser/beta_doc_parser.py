@@ -13,7 +13,7 @@ from ratelimit import limits, sleep_and_retry
 
 # Set OpenAI key
 
-# GPT-4 rate limit (e.g., 20 requests per minute)
+# gpt-3.5-turbo rate limit (e.g., 20 requests per minute)
 CALLS = 20
 RATE_LIMIT = 60  # seconds
 
@@ -21,7 +21,7 @@ RATE_LIMIT = 60  # seconds
 @limits(calls=CALLS, period=RATE_LIMIT)
 def call_gpt(prompt: str) -> Dict[str, Any]:
     """Send request to GPT with rate limiting."""
-    response = client.chat.completions.create(model="gpt-4",
+    response = client.chat.completions.create(model="gpt-3.5-turbo",
     messages=[{"role": "user", "content": prompt}],
     max_tokens=1200,
     temperature=0.3)
