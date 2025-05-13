@@ -84,19 +84,19 @@ def parse_beta_document(beta_path: str, alpha_analysis: Dict[str, Any]) -> Dict[
     }
 
 # Usage example
-if __name__ == "__main__":
-    import sys
-    from backend.app.parser.alpha_doc_parser import parse_alpha_document
+# if __name__ == "__main__":
+#     import sys
+#     from backend.app.parser.alpha_doc_parser import parse_alpha_document
 
-    if len(sys.argv) != 3:
-        print("Usage: python beta_doc_parser.py alpha.docx beta.docx")
-        sys.exit(1)
+#     if len(sys.argv) != 3:
+#         print("Usage: python beta_doc_parser.py alpha.docx beta.docx")
+#         sys.exit(1)
 
-    alpha_path = sys.argv[1]
-    beta_path = sys.argv[2]
+#     alpha_path = sys.argv[1]
+#     beta_path = sys.argv[2]
 
-    alpha = parse_alpha_document(alpha_path)["gpt_analysis"]
-    result = parse_beta_document(beta_path, alpha)
+#     alpha = parse_alpha_document(alpha_path)["gpt_analysis"]
+#     result = parse_beta_document(beta_path, alpha)
 
-    print("\n=== Beta Mappings ===")
-    print(json.dumps(result["mapping_result"], indent=2))
+#     print("\n=== Beta Mappings ===")
+#     print(json.dumps(result["mapping_result"], indent=2))

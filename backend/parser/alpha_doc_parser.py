@@ -87,19 +87,19 @@ def parse_alpha_document(docx_file_path: str) -> Dict[str, Any]:
     }
 
 # For CLI or script usage
-if __name__ == "__main__":
-    import sys
-    from pprint import pprint
+# if __name__ == "__main__":
+#     import sys
+#     from pprint import pprint
 
-    if len(sys.argv) != 2:
-        print("Usage: python alpha_doc_parser.py path_to_document.docx")
-        sys.exit(1)
+#     if len(sys.argv) != 2:
+#         print("Usage: python alpha_doc_parser.py path_to_document.docx")
+#         sys.exit(1)
 
-    docx_path = sys.argv[1]
-    result = parse_alpha_document(docx_path)
+#     docx_path = sys.argv[1]
+#     result = parse_alpha_document(docx_path)
 
-    print("\n=== Raw Extracted Data ===")
-    pprint(result["raw_data"])
+#     print("\n=== Raw Extracted Data ===")
+#     pprint(result["raw_data"])
 
-    print("\n=== GPT Structured Analysis ===")
-    pprint(result["gpt_analysis"])
+#     print("\n=== GPT Structured Analysis ===")
+#     pprint(result["gpt_analysis"])

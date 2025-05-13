@@ -69,19 +69,19 @@ def parse_beta_excel(excel_path: str, alpha_analysis: Dict[str, Any]) -> Dict[st
     }
 
 # Example usage
-if __name__ == "__main__":
-    import sys
-    from backend.app.parser.alpha_doc_parser import parse_alpha_document
+# if __name__ == "__main__":
+#     import sys
+#     from backend.app.parser.alpha_doc_parser import parse_alpha_document
 
-    if len(sys.argv) != 3:
-        print("Usage: python beta_excel_parser.py alpha.docx beta.xlsx")
-        sys.exit(1)
+#     if len(sys.argv) != 3:
+#         print("Usage: python beta_excel_parser.py alpha.docx beta.xlsx")
+#         sys.exit(1)
 
-    alpha_path = sys.argv[1]
-    beta_excel_path = sys.argv[2]
+#     alpha_path = sys.argv[1]
+#     beta_excel_path = sys.argv[2]
 
-    alpha = parse_alpha_document(alpha_path)["gpt_analysis"]
-    result = parse_beta_excel(beta_excel_path, alpha)
+#     alpha = parse_alpha_document(alpha_path)["gpt_analysis"]
+#     result = parse_beta_excel(beta_excel_path, alpha)
 
-    print("\n=== Excel Mappings ===")
-    print(json.dumps(result["mapping_result"], indent=2))
+#     print("\n=== Excel Mappings ===")
+#     print(json.dumps(result["mapping_result"], indent=2))
