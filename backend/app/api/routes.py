@@ -3,7 +3,7 @@ from fastapi import APIRouter, UploadFile, Form, Request
 from app.services.document_generator import generate_document
 from app.core.limiter import limiter
 from app.services.excel_generator import fill_ncd_mis_excel
-from app.services.parser import extract_term_sheet_data
+from backend.app.parser.alpha_doc_parser import extract_term_sheet_data
 import os
 
 router = APIRouter()

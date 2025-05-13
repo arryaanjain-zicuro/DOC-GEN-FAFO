@@ -18,3 +18,5 @@ python-dotenv==1.0.1
 aiofiles==23.2.1
 slowapi
 python-multipart
+langgraph 
+langchain  
