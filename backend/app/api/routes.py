@@ -2,7 +2,7 @@
 from fastapi import APIRouter, UploadFile, Form, File, Request
 from app.services.document_generator import generate_document
 from app.core.limiter import limiter
-from parser.alpha_doc_parser import parse_alpha_document
+from parser.alpha_doc_parser import parse_alpha_document, test_openai
 import os, uuid
 
 from app.services.run_transformation import run_graph_async
@@ -10,7 +10,6 @@ from slowapi.util import get_remote_address
 from fastapi.responses import JSONResponse, FileResponse
 
 from app.services.excel_generator import fill_excel_generic
-
 router = APIRouter()
 
 UPLOAD_DIR = "uploads"
@@ -86,6 +85,9 @@ async def run_transformation(request: Request, alpha: UploadFile = File(...), be
             except Exception as e:
                 print(f"Warning: failed to delete {path}: {e}")
 
+@router.get("/test-openai")
+async def run_test_openai():
+    return await test_openai()
 
 @router.get("/")
 async def root():
