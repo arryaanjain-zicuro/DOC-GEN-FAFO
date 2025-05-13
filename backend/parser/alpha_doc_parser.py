@@ -1,11 +1,16 @@
+import os
 from docx import Document
-import openai
+from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "your-openai-api-key"))
 from typing import List, Dict, Any, Union
 import json
-import os
 
 # Ensure you set your OpenAI API key via environment variable or hardcode for dev
-openai.api_key = os.getenv("OPENAI_API_KEY", "your-openai-api-key")
 
 def extract_tables(doc: Document) -> List[List[Dict[str, str]]]:
     """Extract tables as a list of key-value row dictionaries."""
@@ -50,23 +55,21 @@ Return **only** the JSON.
 
 def send_to_gpt(prompt: str) -> Dict[str, Any]:
     """Send prompt to OpenAI GPT and parse as JSON."""
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "user", "content": prompt}
-        ],
-        max_tokens=1200,
-        temperature=0.4,
-    )
+    response = client.chat.completions.create(model="gpt-4",
+    messages=[
+        {"role": "user", "content": prompt}
+    ],
+    max_tokens=1200,
+    temperature=0.4)
 
-    text_output = response['choices'][0]['message']['content'].strip()
-    
+    text_output = response.choices[0].message.content.strip()
+
     # Attempt to parse JSON output from GPT
     try:
         parsed_output = json.loads(text_output)
     except json.JSONDecodeError:
         raise ValueError("Failed to parse GPT output as JSON:\n" + text_output)
-    
+
     return parsed_output
 
 def parse_alpha_document(docx_file_path: str) -> Dict[str, Any]:

@@ -1,13 +1,17 @@
-from docx import Document
-import openai
-import json
 import os
+from docx import Document
+from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "your-api-key"))
+import json
 import time
 from typing import Dict, Any, List
 from ratelimit import limits, sleep_and_retry
 
 # Set OpenAI key
-openai.api_key = os.getenv("OPENAI_API_KEY", "your-api-key")
 
 # GPT-4 rate limit (e.g., 20 requests per minute)
 CALLS = 20
@@ -17,16 +21,14 @@ RATE_LIMIT = 60  # seconds
 @limits(calls=CALLS, period=RATE_LIMIT)
 def call_gpt(prompt: str) -> Dict[str, Any]:
     """Send request to GPT with rate limiting."""
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=1200,
-        temperature=0.3
-    )
+    response = client.chat.completions.create(model="gpt-4",
+    messages=[{"role": "user", "content": prompt}],
+    max_tokens=1200,
+    temperature=0.3)
     try:
-        return json.loads(response['choices'][0]['message']['content'])
+        return json.loads(response.choices[0].message.content)
     except json.JSONDecodeError:
-        raise ValueError("Could not parse GPT response:\n" + response['choices'][0]['message']['content'])
+        raise ValueError("Could not parse GPT response:\n" + response.choices[0].message.content)
 
 def extract_beta_word(docx_file: str) -> Dict[str, Any]:
     """Extract tables and paragraphs from a beta Word document."""
