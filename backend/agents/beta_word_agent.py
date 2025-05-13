@@ -1,6 +1,8 @@
 # agents/beta_word_agent.py
 
-from core.beta_doc_parser import parse_beta_document
+from parser.beta_doc_parser import parse_beta_document
+from typing import Dict, Any
+
 
 def beta_word_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
     beta_doc_path = state.get("beta_word_path")

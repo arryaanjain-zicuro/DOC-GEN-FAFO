@@ -1,6 +1,8 @@
 # agents/alpha_agent.py
 
-from core.alpha_doc_parser import parse_alpha_document
+from parser.alpha_doc_parser import parse_alpha_document
+from typing import Dict, Any
+
 
 def alpha_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
     alpha_path = state["alpha_path"]

@@ -1,6 +1,8 @@
 # agents/beta_excel_agent.py
 
-from core.beta_excel_parser import parse_beta_excel
+from parser.beta_excel_parser import parse_beta_excel
+from typing import Dict, Any
+
 
 def beta_excel_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
     beta_excel_path = state.get("beta_excel_path")
