@@ -26,46 +26,57 @@ def send_to_gemini(prompt: str, retries: int = 3) -> str:
                 raise
             time.sleep(2)
 
-def extract_docx_fields(docx_path: str) -> List[str]:
-    """Very naive DOCX field extractor: pulls out bold text, tables, or patterns like 'Field: Value'."""
+def extract_docx_fields(docx_path: str) -> List[Dict[str, str]]:
     doc = docx.Document(docx_path)
-    fields = set()
+    fields = []
 
+    # Handle "Field: Value" in paragraphs
     for para in doc.paragraphs:
         text = para.text.strip()
-        if ':' in text:
-            parts = text.split(':', 1)
-            if parts[0].strip():
-                fields.add(parts[0].strip())
+        if ":" in text:
+            parts = text.split(":", 1)
+            label = parts[0].strip()
+            value = parts[1].strip()
+            if label:
+                fields.append({"label": label, "value": value or "No value"})
 
+    # Handle tables
     for table in doc.tables:
         for row in table.rows:
-            if len(row.cells) >= 2:
-                label = row.cells[0].text.strip()
+            cells = [cell.text.strip() for cell in row.cells]
+            if len(cells) >= 2:
+                label = cells[0]
+                value = cells[1]
                 if label:
-                    fields.add(label)
+                    fields.append({"label": label, "value": value or "No value"})
 
-    return list(fields)
+    return fields
 
-def extract_excel_fields(excel_path: str) -> List[str]:
+def extract_excel_fields(excel_path: str) -> List[Dict[str, str]]:
     wb = openpyxl.load_workbook(excel_path, data_only=True)
-    fields = set()
+    fields = []
 
     for sheet in wb.sheetnames:
         ws = wb[sheet]
-        for row in ws.iter_rows(max_row=20):  # Top 20 rows for headers
-            for cell in row:
-                val = str(cell.value).strip() if cell.value else ""
-                if val and len(val) < 50:
-                    fields.add(val)
+        for row in ws.iter_rows(min_row=1, max_row=30):  # First 30 rows
+            label_cell = row[0].value if len(row) > 0 else None
+            value_cell = row[1].value if len(row) > 1 else None
 
-    return list(fields)
+            label = str(label_cell).strip() if label_cell else ""
+            value = str(value_cell).strip() if value_cell else ""
 
+            if label:
+                fields.append({"label": label, "value": value or "No value"})
+
+    return fields
 # ---------- MAIN ANALYSIS ----------
 
 def summarize_field_sets(all_docs: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Find common and unique fields."""
-    all_field_sets = {doc['filename']: set(doc['fields']) for doc in all_docs}
+    all_field_sets = {
+        doc["filename"]: set(field["label"] for field in doc["fields"])
+        for doc in all_docs
+    }
     all_fields = list(all_field_sets.values())
 
     common_fields = list(set.intersection(*all_fields)) if len(all_fields) > 1 else []
