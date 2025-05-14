@@ -5,6 +5,7 @@ import AdminPanel from "./pages/AdminPanel";
 import Login from "./pages/Login";
 import ParsingMode from "./pages/ParsingMode";
 import Navbar from "./components/Navbar";
+import Home from "./pages/Home";
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const isLoggedIn = localStorage.getItem("loggedIn") === "true";
@@ -21,8 +22,9 @@ const AppLayout: React.FC = () => {
       {!isLoginPage && <Navbar />}
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+        <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/parsing-mode" element={<ProtectedRoute><ParsingMode /></ProtectedRoute>} />
+        <Route path="/pattern-analysis" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
       </Routes>
     </>
   );
