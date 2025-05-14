@@ -73,7 +73,7 @@ def analyze_excel_against_alpha(alpha_analysis: Dict[str, Any], beta_excel_data:
     prompt = build_comparison_prompt(alpha_analysis, beta_excel_data)
     gemini_response = send_to_gemini(prompt)
     cleaned_response = re.sub(r"^```json\s*|\s*```$", "", gemini_response.strip())
-
+    print("Cleaned response: ",cleaned_response)
     # Now safely parse the JSON
     try:
         parsed_result = json.loads(cleaned_response)
