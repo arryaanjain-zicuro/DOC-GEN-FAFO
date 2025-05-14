@@ -24,7 +24,7 @@ export default function ParsingMode() {
     files.forEach((file) => formData.append("files", file));
 
     try {
-      const res = await axios.post("http://localhost:8000/parsing-mode", formData, {
+      const res = await axios.post(`${import.meta.env.VITE_FAST_API_SERVER}/parsing-mode`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setResult(res.data);
