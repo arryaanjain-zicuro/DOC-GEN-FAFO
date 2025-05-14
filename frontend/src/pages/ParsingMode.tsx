@@ -2,12 +2,19 @@ import React, { useState } from "react";
 import axios from "axios";
 import FileUploadField from "../components/FileUploadField";
 import ParsedResultCard from "../components/ParsedResultCard";
+import DocumentCardList from "../components/DocumentCardList";
+import DocumentDetailModal from "../modals/DocumentDetailModal";
 
 export default function ParsingMode() {
   const [files, setFiles] = useState<File[]>([]);
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
+  
+  const handleDocClick = (doc: any) => {
+    setSelectedDoc(doc);
+  };
 
   const handleUpload = async () => {
     if (files.length === 0) return;
@@ -66,14 +73,22 @@ export default function ParsingMode() {
             )}
           </div>
 
-          {result.documents?.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {result.documents.map((doc: any, i: number) => (
-                <ParsedResultCard key={i} document={doc} />
-              ))}
-            </div>
+          {Array.isArray(result.documents) ? (
+            <>
+              <DocumentCardList
+                documents={result.documents}
+                suggestedAlphaId={result.gemini_summary?.suggested_alpha || ""}
+                onCardClick={handleDocClick}
+              />
+              {selectedDoc && (
+                <DocumentDetailModal
+                  document={selectedDoc}
+                  onClose={() => setSelectedDoc(null)}
+                />
+              )}
+            </>
           ) : (
-            <p className="text-gray-600 italic">No parsed documents found.</p>
+            <p className="text-red-500">Error: Documents are not in expected format.</p>
           )}
         </div>
       )}
