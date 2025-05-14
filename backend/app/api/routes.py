@@ -7,6 +7,8 @@ import os, uuid
 from app.services.run_transformation import run_graph_async
 from fastapi.responses import JSONResponse, FileResponse
 
+from typing import List
+
 from app.services.excel_generator import fill_excel_generic
 router = APIRouter()
 
@@ -80,6 +82,26 @@ async def run_transformation(request: Request, alpha: UploadFile = File(...), be
                 os.remove(path)
             except Exception as e:
                 print(f"Warning: failed to delete {path}: {e}")
+
+#route for app in parsing mode
+@router.post("/parsing-mode")
+async def parsing_mode(request: Request, files: List[UploadFile] = File(...)):
+    paths = []
+    for file in files:
+        path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_{file.filename}")
+        with open(path, "wb") as f:
+            f.write(await file.read())
+        paths.append(path)
+
+    try:
+        from parser.doc_parser_analysis import analyze_documents
+        result = await analyze_documents(paths)
+        return result
+    finally:
+        for path in paths:
+            os.remove(path)
+
+
 
 @router.get("/test-gemini")
 async def run_test_openai():
