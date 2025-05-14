@@ -1,18 +1,44 @@
 // src/components/Navbar.tsx
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     localStorage.removeItem("loggedIn");
     navigate("/login");
   };
 
+  const isActive = (path: string) => location.pathname === path;
+
   return (
     <nav className="bg-white shadow-md px-6 py-3 flex justify-between items-center">
-      <h1 className="text-lg font-semibold">Doc Automation Admin</h1>
+      <div className="flex gap-4">
+        <h1 className="text-lg font-semibold mr-6">Doc Automation Admin</h1>
+
+        <button
+          onClick={() => navigate("/")}
+          className={`px-3 py-1.5 rounded ${
+            isActive("/") ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          Home
+        </button>
+
+        <button
+          onClick={() => navigate("/parsing-mode")}
+          className={`px-3 py-1.5 rounded ${
+            isActive("/parsing-mode")
+              ? "bg-blue-600 text-white"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          Parsing Mode
+        </button>
+      </div>
+
       <button
         onClick={handleLogout}
         className="bg-red-500 text-white px-4 py-1.5 rounded hover:bg-red-600"

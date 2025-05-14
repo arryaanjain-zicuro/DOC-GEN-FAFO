@@ -1,21 +1,37 @@
 // src/App.tsx
 import React, { type JSX } from "react";
-import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import AdminPanel from "./pages/AdminPanel";
 import Login from "./pages/Login";
+import ParsingMode from "./pages/ParsingMode";
+import Navbar from "./components/Navbar";
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const isLoggedIn = localStorage.getItem("loggedIn") === "true";
   return isLoggedIn ? children : <Navigate to="/login" />;
 };
 
-const App: React.FC = () => {
+// Conditionally render the navbar outside of login page
+const AppLayout: React.FC = () => {
+  const location = useLocation();
+  const isLoginPage = location.pathname === "/login";
+
   return (
-    <Router>
+    <>
+      {!isLoginPage && <Navbar />}
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+        <Route path="/parsing-mode" element={<ProtectedRoute><ParsingMode /></ProtectedRoute>} />
       </Routes>
+    </>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <Router>
+      <AppLayout />
     </Router>
   );
 };

@@ -1,7 +1,6 @@
 // src/pages/AdminPanel.tsx
 import React, { useState } from "react";
 import DragDropUpload from "../components/DragDropUpload";
-import Navbar from "../components/Navbar";
 
 const AdminPanel: React.FC = () => {
   const [alphaFile, setAlphaFile] = useState<File | null>(null);
@@ -18,7 +17,6 @@ const AdminPanel: React.FC = () => {
 
   return (
     <>
-      <Navbar />
       <div className="max-w-xl mx-auto mt-8 p-6 bg-white shadow-md rounded-lg">
         <h2 className="text-xl font-bold mb-6 text-center">Upload Documents for Training</h2>
 
