@@ -1,7 +1,7 @@
 # agents/alpha_agent.py
 
 from app.parsing.alpha_doc_parser import parse_alpha_document
-from workflows.models.alpha_models import ParsedAlphaDocument
+from workflows.models.alpha.alpha_models import ParsedAlphaDocument
 from typing import Dict, Any
 
 from app.core.gemini_rate_limiter import GeminiRateLimiter

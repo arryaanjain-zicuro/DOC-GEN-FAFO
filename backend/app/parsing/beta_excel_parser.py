@@ -2,6 +2,8 @@
 
 from workflows.models.betaExcel.beta_excel_mapping import BetaExcelFieldMapping
 from workflows.models.betaExcel.beta_excel_models import ParsedBetaExcelDocument
+from workflows.models.alpha.alpha_models import ParsedAlphaDocument
+
 from app.parsing.base.excel_utils import extract_excel_content
 from app.parsing.base.gemini_client import send_prompt
 import json, re
@@ -33,9 +35,9 @@ Please return a JSON object with:
 Return only valid JSON. No markdown or extra explanation.
 """
 
-def parse_beta_excel(excel_path: str, alpha_data: Dict[str, Any]) -> ParsedBetaExcelDocument:
+def parse_beta_excel(excel_path: str, alpha_data: ParsedAlphaDocument) -> ParsedBetaExcelDocument:
     beta_excel_data = extract_excel_content(excel_path)
-    prompt = build_excel_comparison_prompt(alpha_data["inferred_fields"], beta_excel_data)
+    prompt = build_excel_comparison_prompt(alpha_data.inferred_fields, beta_excel_data)
 
     gemini_response = send_prompt(prompt)
     cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", gemini_response.strip(), flags=re.IGNORECASE)

@@ -12,7 +12,7 @@ from typing import List
 from app.services.excel_generator import fill_excel_generic
 
 from workflows.models.shared import TransformationState
-from app.workflow.graph.transformation_graph import transformation_graph
+from workflows.transformation_graph import transformation_graph
 
 router = APIRouter()
 

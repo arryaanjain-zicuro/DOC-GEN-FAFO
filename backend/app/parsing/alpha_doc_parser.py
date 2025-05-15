@@ -2,7 +2,7 @@
 import json, re
 from app.parsing.base.document_utils import extract_from_docx
 from app.parsing.base.gemini_client import send_prompt
-from workflows.models.alpha_models import ParsedAlphaDocument
+from workflows.models.alpha.alpha_models import ParsedAlphaDocument
 from typing import Dict, Any
 
 
