@@ -1,27 +1,23 @@
-# workflows/transformation_graph.py
-
 from langgraph.graph import StateGraph, END
-from langchain_core.runnables import Runnable
-from agents.alpha_agent import alpha_agent_node
-from agents.beta_word_agent import beta_word_agent_node
-from agents.beta_excel_agent import beta_excel_agent_node
+from workflows.models.shared import TransformationState
+from workflows.agents.alpha_agent import alpha_agent_node
+from workflows.agents.beta_word_agent import beta_word_agent_node
+from workflows.agents.beta_excel_agent import beta_excel_agent_node
 
-from models.state import State
-from pydantic import BaseModel
+def transformation_graph():
+    builder = StateGraph(TransformationState)
 
-# Build the LangGraph DAG
-def build_transformation_graph():
-    builder = StateGraph(State)
+    # Add agent nodes
+    builder.add_node("alpha_agent", alpha_agent_node)
+    builder.add_node("beta_word_agent", beta_word_agent_node)
+    builder.add_node("beta_excel_agent", beta_excel_agent_node)
 
-    # Nodes
-    builder.add_node("parse_alpha", alpha_agent_node)
-    builder.add_node("analyze_beta_word", beta_word_agent_node)
-    builder.add_node("analyze_beta_excel", beta_excel_agent_node)
+    # Entry point is alpha agent
+    builder.set_entry_point("alpha_agent")
 
-    # Edges (sequential for now, parallel later if needed)
-    builder.set_entry_point("parse_alpha")
-    builder.add_edge("parse_alpha", "analyze_beta_word")
-    builder.add_edge("analyze_beta_word", "analyze_beta_excel")
-    builder.add_edge("analyze_beta_excel", END)
+    # Chain all three agents in order
+    builder.add_edge("alpha_agent", "beta_word_agent")
+    builder.add_edge("beta_word_agent", "beta_excel_agent")
+    builder.add_edge("beta_excel_agent", END)
 
     return builder.compile()

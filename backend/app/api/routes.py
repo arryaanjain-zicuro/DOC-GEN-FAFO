@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, Form, File, Request
 from app.services.document_generator import generate_document
 from app.core.limiter import limiter  # You can remove this import if you don't need it anymore
 from parser.alpha_doc_parser import parse_alpha_document, test_gemini
-import os, uuid
+import os, uuid, shutil
 
 from app.services.run_transformation import run_graph_async
 from fastapi.responses import JSONResponse, FileResponse
@@ -10,6 +10,10 @@ from fastapi.responses import JSONResponse, FileResponse
 from typing import List
 
 from app.services.excel_generator import fill_excel_generic
+
+from workflows.models.shared import TransformationState
+from app.workflow.graph.transformation_graph import transformation_graph
+
 router = APIRouter()
 
 UPLOAD_DIR = "uploads"
@@ -60,28 +64,37 @@ UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/run-transformation")
-async def run_transformation(request: Request, alpha: UploadFile = File(...), beta_word: UploadFile = File(...), beta_excel: UploadFile = File(...)):
-    # Save uploaded files temporarily
-    def save_temp_file(file: UploadFile) -> str:
-        path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_{file.filename}")
+async def run_transformation(
+    alpha_doc: UploadFile = File(...),
+    beta_word_doc: UploadFile = File(...),
+    beta_excel_doc: UploadFile = File(...)
+):
+    temp_dir = "/tmp/documents"
+    os.makedirs(temp_dir, exist_ok=True)
+
+    def save_file(file: UploadFile) -> str:
+        path = os.path.join(temp_dir, f"{uuid.uuid4()}_{file.filename}")
         with open(path, "wb") as f:
-            f.write(file.file.read())
+            shutil.copyfileobj(file.file, f)
         return path
 
-    alpha_path = save_temp_file(alpha)
-    beta_word_path = save_temp_file(beta_word)
-    beta_excel_path = save_temp_file(beta_excel)
+    # Save all uploaded docs
+    alpha_path = save_file(alpha_doc)
+    beta_word_path = save_file(beta_word_doc)
+    beta_excel_path = save_file(beta_excel_doc)
 
-    try:
-        result = await run_graph_async(alpha_path, beta_word_path, beta_excel_path)
-        return JSONResponse(content=result)
-    finally:
-        # Optional cleanup
-        for path in [alpha_path, beta_word_path, beta_excel_path]:
-            try:
-                os.remove(path)
-            except Exception as e:
-                print(f"Warning: failed to delete {path}: {e}")
+    # Initialize state
+    initial_state = TransformationState(
+        alpha_path=alpha_path,
+        beta_word_path=beta_word_path,
+        beta_excel_path=beta_excel_path
+    )
+
+    # Run LangGraph
+    graph = transformation_graph()
+    final_state = graph.invoke(initial_state)
+
+    return final_state.dict()
 
 #route for app in parsing mode
 @router.post("/parsing-mode")
