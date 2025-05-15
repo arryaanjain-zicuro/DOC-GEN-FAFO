@@ -9,7 +9,9 @@ from workflows.models.betaWord.shared.field_mapping import BetaWordFieldMapping
 from workflows.models.alpha.alpha_models import ParsedAlphaDocument
 
 def build_comparison_prompt(alpha_fields: Any, beta_raw_data: Dict[str, Any]) -> str:
-    alpha_json = json.dumps(alpha_fields, indent=2)
+    alpha_json = json.dumps(
+        [field.model_dump() for field in alpha_fields], indent=2
+    )    
     beta_json = json.dumps(beta_raw_data, indent=2)
     return f"""
 You are an AI tasked with comparing an ALPHA template (base document fields) to a BETA Word document.
