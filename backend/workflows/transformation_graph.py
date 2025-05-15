@@ -2,27 +2,13 @@
 
 from langgraph.graph import StateGraph, END
 from langchain_core.runnables import Runnable
-from typing import Optional, Dict, Any
 from agents.alpha_agent import alpha_agent_node
 from agents.beta_word_agent import beta_word_agent_node
 from agents.beta_excel_agent import beta_excel_agent_node
 
+from models.state import State
 from pydantic import BaseModel
 
-#the state schema (updated)
-class State(BaseModel):
-    alpha_path: Optional[str] = None
-    beta_word_path: Optional[str] = None
-    beta_excel_path: Optional[str] = None
-
-    alpha_data: Optional[Dict[str, Any]] = None
-    alpha_raw: Optional[Dict[str, Any]] = None
-
-    beta_word_mapping: Optional[Dict[str, Any]] = None
-    beta_raw: Optional[Dict[str, Any]] = None
-
-    beta_excel_mapping: Optional[Dict[str, Any]] = None
-    beta_excel_raw: Optional[Dict[str, Any]] = None
 # Build the LangGraph DAG
 def build_transformation_graph():
     builder = StateGraph(State)
