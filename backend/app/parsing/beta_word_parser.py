@@ -1,40 +1,38 @@
 import json, re
 from typing import Dict, Any
-from app.parsing.base.excel_utils import extract_excel_content
+from app.parsing.base.document_utils import extract_from_docx
 from app.parsing.base.gemini_client import send_prompt
 
 
-def build_excel_comparison_prompt(alpha_fields: Any, beta_excel_data: Dict[str, Any]) -> str:
+def build_comparison_prompt(alpha_fields: Any, beta_raw_data: Dict[str, Any]) -> str:
     alpha_json = json.dumps(alpha_fields, indent=2)
-    beta_json = json.dumps(beta_excel_data, indent=2)
+    beta_json = json.dumps(beta_raw_data, indent=2)
     return f"""
-You are an AI system comparing an ALPHA document (base structure) to a BETA Excel file.
+You are an AI tasked with comparing an ALPHA template (base document fields) to a BETA Word document.
 
 ALPHA (structured fields):
 {alpha_json}
 
-BETA (Excel content):
+BETA (raw extracted Word content):
 {beta_json}
 
-Please return a JSON object with:
-1. "field_mappings": list of mappings, each with:
+Your output should be a JSON object with:
+1. "field_mappings": list of objects, each with:
    - "alpha_field": name from ALPHA
-   - "sheet": sheet name
-   - "cell": Excel cell reference (e.g., A1)
-   - "value": actual value in that cell
-   - "transformation": transformation logic or formatting
+   - "beta_occurrence": actual occurrence in BETA
+   - "transformation": description of formatting or transformation applied
 
-2. "unmatched_beta_cells": list of cell references that do not match ALPHA fields
+2. "unmatched_beta_fields": any values in BETA not clearly derived from ALPHA.
 
-3. "transformation_notes": patterns/formulas observed in transformations
+3. "transformation_notes": general notes about patterns or formulas used.
 
-Return only valid JSON. No markdown or extra explanation.
+Return **only valid JSON**. Do not include markdown or commentary.
 """
 
 
-def parse_beta_excel(excel_path: str, alpha_data: Dict[str, Any]) -> Dict[str, Any]:
-    beta_excel_data = extract_excel_content(excel_path)
-    prompt = build_excel_comparison_prompt(alpha_data["inferred_fields"], beta_excel_data)
+def parse_beta_word(beta_path: str, alpha_data: Dict[str, Any]) -> Dict[str, Any]:
+    beta_raw_data = extract_from_docx(beta_path)
+    prompt = build_comparison_prompt(alpha_data["inferred_fields"], beta_raw_data)
     gemini_response = send_prompt(prompt)
     cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", gemini_response.strip(), flags=re.IGNORECASE)
 
@@ -44,6 +42,6 @@ def parse_beta_excel(excel_path: str, alpha_data: Dict[str, Any]) -> Dict[str, A
         raise ValueError(f"Invalid JSON from Gemini: {e}")
 
     return {
-        "beta_raw": beta_excel_data,
+        "beta_raw": beta_raw_data,
         "mapping_result": mapping_result
     }
