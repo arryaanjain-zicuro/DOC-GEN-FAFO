@@ -12,9 +12,9 @@ class TransformationState(BaseModel):
     beta_excel_path: Optional[str]
     
     # Type of beta document to route to correct agent
-    beta_type: Optional[Literal["word", "excel"]]
+    beta_type: Optional[Literal["word", "excel"]] = None
 
     # Parsed outputs
-    alpha_data: Optional[ParsedAlphaDocument]
-    beta_excel_data: Optional[ParsedBetaExcelDocument]
-    beta_word_data: Optional[ParsedBetaWordDocument]
+    alpha_data: Optional[ParsedAlphaDocument] = None
+    beta_excel_data: Optional[ParsedBetaExcelDocument] = None
+    beta_word_data: Optional[ParsedBetaWordDocument] = None

@@ -8,5 +8,5 @@ class InferredField(BaseModel):
     type: Literal["text", "number", "date", "currency"]
     value: Optional[str]
     source: Literal["paragraph", "table"]
-    source_location: Optional[str]  # e.g. "Paragraph 4", "Table 2 Row 3"
+    source_location: Optional[str] = None # e.g. "Paragraph 4", "Table 2 Row 3"
 
