@@ -1,8 +1,8 @@
 # agents/alpha_agent.py
 
-from backend.app.parsing.alpha_doc_parser import parse_alpha_document
+from app.parsing.alpha_doc_parser import parse_alpha_document
+from workflows.models.alpha_models import ParsedAlphaDocument
 from typing import Dict, Any
-
 
 from app.core.gemini_rate_limiter import GeminiRateLimiter
 
@@ -13,11 +13,11 @@ def alpha_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
     if not alpha_path:
         raise ValueError("Missing required 'alpha_path' in state")
 
-    limiter.wait()  # 🛑 wait before hitting Gemini API
-    alpha_result = parse_alpha_document(alpha_path)
+    limiter.wait()
+
+    alpha_result: ParsedAlphaDocument = parse_alpha_document(alpha_path)
 
     return {
         **state.dict(),
-        "alpha_data": alpha_result["gemini_analysis"],
-        "alpha_raw": alpha_result["raw_data"]
+        "alpha_data": alpha_result.model_dump(),  # Use model_dump() for compatibility
     }
