@@ -1,7 +1,7 @@
 // src/App.tsx
 import React, { type JSX } from "react";
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from "react-router-dom";
-import AdminPanel from "./pages/AdminPanel";
+import AdminPanel from "./pages/GenerateAnalysis";
 import Login from "./pages/Login";
 import ParsingMode from "./pages/ParsingMode";
 import Navbar from "./components/Navbar";

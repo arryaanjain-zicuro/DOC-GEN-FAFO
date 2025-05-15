@@ -1,8 +1,8 @@
-// src/pages/AdminPanel.tsx
+// src/pages/GenerateAnalysis.tsx
 import React, { useState } from "react";
 import DragDropUpload from "../components/DragDropUpload";
 
-const AdminPanel: React.FC = () => {
+const GenerateAnalysis: React.FC = () => {
   const [alphaFile, setAlphaFile] = useState<File | null>(null);
   const [betaDocFile, setBetaDocFile] = useState<File | null>(null);
   const [betaExcelFile, setBetaExcelFile] = useState<File | null>(null);
@@ -35,4 +35,4 @@ const AdminPanel: React.FC = () => {
   );
 };
 
-export default AdminPanel;
+export default GenerateAnalysis;
