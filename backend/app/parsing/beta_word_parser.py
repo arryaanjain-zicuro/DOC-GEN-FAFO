@@ -1,8 +1,10 @@
+# app/parsing/beta_word_parser.py
+
 import json, re
 from typing import Dict, Any
 from app.parsing.base.document_utils import extract_from_docx
 from app.parsing.base.gemini_client import send_prompt
-
+from workflows.models.betaWord.beta_word_models import ParsedBetaWordDocument, BetaWordFieldMapping
 
 def build_comparison_prompt(alpha_fields: Any, beta_raw_data: Dict[str, Any]) -> str:
     alpha_json = json.dumps(alpha_fields, indent=2)
@@ -29,19 +31,20 @@ Your output should be a JSON object with:
 Return **only valid JSON**. Do not include markdown or commentary.
 """
 
-
-def parse_beta_word(beta_path: str, alpha_data: Dict[str, Any]) -> Dict[str, Any]:
+def parse_beta_word(beta_path: str, alpha_data: Dict[str, Any]) -> ParsedBetaWordDocument:
     beta_raw_data = extract_from_docx(beta_path)
     prompt = build_comparison_prompt(alpha_data["inferred_fields"], beta_raw_data)
     gemini_response = send_prompt(prompt)
     cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", gemini_response.strip(), flags=re.IGNORECASE)
 
     try:
-        mapping_result = json.loads(cleaned)
+        result = json.loads(cleaned)
     except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON from Gemini: {e}")
+        raise ValueError(f"Invalid JSON from Gemini in Word parser: {e}")
 
-    return {
-        "beta_raw": beta_raw_data,
-        "mapping_result": mapping_result
-    }
+    return ParsedBetaWordDocument(
+        raw_data=beta_raw_data,
+        field_mappings=[BetaWordFieldMapping(**f) for f in result.get("field_mappings", [])],
+        unmatched_beta_fields=result.get("unmatched_beta_fields", []),
+        transformation_notes=result.get("transformation_notes", "")
+    )

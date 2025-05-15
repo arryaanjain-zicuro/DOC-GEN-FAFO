@@ -1,7 +1,8 @@
-# app/parsing/alpha_parser.py
+# app/parsing/alpha_doc_parser.py
 import json, re
 from app.parsing.base.document_utils import extract_from_docx
 from app.parsing.base.gemini_client import send_prompt
+from workflows.models.alpha_models import ParsedAlphaDocument
 from typing import Dict, Any
 
 
@@ -24,10 +25,12 @@ Return a JSON object with:
 Return only valid JSON. No markdown, no explanations.
 """
 
-def parse_alpha_document(docx_path: str) -> Dict[str, Any]:
+
+def parse_alpha_document(docx_path: str) -> ParsedAlphaDocument:
     raw_data = extract_from_docx(docx_path)
     prompt = build_analysis_prompt(raw_data)
     gemini_response = send_prompt(prompt)
+
     cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", gemini_response.strip(), flags=re.IGNORECASE)
 
     try:
@@ -35,17 +38,9 @@ def parse_alpha_document(docx_path: str) -> Dict[str, Any]:
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid Gemini JSON: {e}")
 
-    return {
-        "raw_data": raw_data,
-        "inferred_fields": structured.get("inferred_fields", []),
-        "relationships": structured.get("relationships", []),
-        "missing_fields": structured.get("missing_fields", [])
-    }
-    #optional change to test later, source traceability
-    # return {
-    # "doc_id": docx_path.split("/")[-1],
-    # "raw_data": raw_data,
-    # "inferred_fields": structured.get("inferred_fields", []),
-    # "relationships": structured.get("relationships", []),
-    # "missing_fields": structured.get("missing_fields", [])
-    # }
+    return ParsedAlphaDocument(
+        raw_data=raw_data,
+        inferred_fields=structured.get("inferred_fields", []),
+        relationships=structured.get("relationships", []),
+        missing_fields=structured.get("missing_fields", [])
+    )

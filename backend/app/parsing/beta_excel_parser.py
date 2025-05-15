@@ -1,10 +1,12 @@
-import json, re
-from typing import Dict, Any
+# app/parsing/beta_excel_parser.py
+
+from workflows.models.betaExcel.beta_excel_mapping import BetaExcelFieldMapping
+from workflows.models.betaExcel.beta_excel_models import ParsedBetaExcelDocument
 from app.parsing.base.excel_utils import extract_excel_content
 from app.parsing.base.gemini_client import send_prompt
+import json, re
 
-
-def build_excel_comparison_prompt(alpha_fields: Any, beta_excel_data: Dict[str, Any]) -> str:
+def build_excel_comparison_prompt(alpha_fields, beta_excel_data):
     alpha_json = json.dumps(alpha_fields, indent=2)
     beta_json = json.dumps(beta_excel_data, indent=2)
     return f"""
@@ -31,19 +33,21 @@ Please return a JSON object with:
 Return only valid JSON. No markdown or extra explanation.
 """
 
-
-def parse_beta_excel(excel_path: str, alpha_data: Dict[str, Any]) -> Dict[str, Any]:
+def parse_beta_excel(excel_path: str, alpha_data: Dict[str, Any]) -> ParsedBetaExcelDocument:
     beta_excel_data = extract_excel_content(excel_path)
     prompt = build_excel_comparison_prompt(alpha_data["inferred_fields"], beta_excel_data)
+
     gemini_response = send_prompt(prompt)
     cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", gemini_response.strip(), flags=re.IGNORECASE)
 
     try:
-        mapping_result = json.loads(cleaned)
+        result = json.loads(cleaned)
     except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON from Gemini: {e}")
+        raise ValueError(f"Invalid JSON from Gemini in Excel parser: {e}")
 
-    return {
-        "beta_raw": beta_excel_data,
-        "mapping_result": mapping_result
-    }
+    return ParsedBetaExcelDocument(
+        raw_data=beta_excel_data,
+        field_mappings=[BetaExcelFieldMapping(**f) for f in result.get("field_mappings", [])],
+        unmatched_beta_cells=result.get("unmatched_beta_cells", []),
+        transformation_notes=result.get("transformation_notes", "")
+    )
