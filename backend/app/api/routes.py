@@ -85,16 +85,16 @@ async def run_transformation(
 
     # Initialize state
     initial_state = TransformationState(
-        alpha_path=alpha_path,
-        beta_word_path=beta_word_path,
-        beta_excel_path=beta_excel_path
+        alpha_path= alpha_path,
+        beta_word_path= beta_word_path,
+        beta_excel_path= beta_excel_path
     )
 
     # Run LangGraph
     graph = transformation_graph()
     final_state = graph.invoke(initial_state)
 
-    return final_state.dict()
+    return dict(final_state)
 
 #route for app in parsing mode
 @router.post("/parsing-mode")
