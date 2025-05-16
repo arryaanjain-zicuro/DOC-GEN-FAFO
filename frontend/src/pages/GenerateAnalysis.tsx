@@ -35,6 +35,10 @@ const GenerateAnalysis: React.FC = () => {
       const endTime = performance.now();
       setElapsedTime(((endTime - startTime) / 1000));
       setAnalysisResult(response.data);
+      // ✅ Save session_id to localStorage
+      if (response.data.session_id) {
+        localStorage.setItem("session_id", response.data.session_id);
+      }
     } catch (error) {
       console.error("Error running transformation:", error);
       alert("Failed to process documents.");
@@ -79,7 +83,7 @@ const GenerateAnalysis: React.FC = () => {
           <section className="mb-6">
             <h3 className="text-xl font-semibold mb-2">Alpha Document Fields</h3>
             <ul className="list-disc ml-5 max-h-48 overflow-y-auto">
-              {analysisResult.alpha_data.inferred_fields.slice(0, 20).map((field: any, idx: number) => (
+              {analysisResult.state.alpha_data.inferred_fields.slice(0, 20).map((field: any, idx: number) => (
                 <li key={idx}>{field.name}</li>
               ))}
             </ul>
@@ -88,8 +92,8 @@ const GenerateAnalysis: React.FC = () => {
           {/* Beta Excel Mapping */}
           <section className="mb-6">
             <h3 className="text-xl font-semibold mb-2">Beta Excel Analysis</h3>
-            <p className="text-gray-700 mb-2">Transformation Notes: <i>{analysisResult.beta_excel_data.transformation_notes}</i></p>
-            <p className="mb-2">Unmatched cells: {analysisResult.beta_excel_data.unmatched_beta_cells.length}</p>
+            <p className="text-gray-700 mb-2">Transformation Notes: <i>{analysisResult.state.beta_excel_data.transformation_notes}</i></p>
+            <p className="mb-2">Unmatched cells: {analysisResult.state.beta_excel_data.unmatched_beta_cells.length}</p>
             <table className="w-full text-sm border border-gray-300">
               <thead>
                 <tr className="bg-gray-100">
@@ -97,17 +101,19 @@ const GenerateAnalysis: React.FC = () => {
                   <th className="border px-2 py-1">Sheet</th>
                   <th className="border px-2 py-1">Cell</th>
                   <th className="border px-2 py-1">Value</th>
-                  <th className="border px-2 py-1">Transformation</th>
+                  <th className="border px-2 py-1">Action</th>
+                  <th className="border px-2 py-1">Explanation</th>
                 </tr>
               </thead>
               <tbody>
-                {analysisResult.beta_excel_data.field_mappings.slice(0, 5).map((map: any, idx: number) => (
+                {analysisResult.state.beta_excel_data.field_mappings.slice(0, 5).map((map: any, idx: number) => (
                   <tr key={idx}>
                     <td className="border px-2 py-1">{map.alpha_field}</td>
                     <td className="border px-2 py-1">{map.sheet}</td>
                     <td className="border px-2 py-1">{map.cell}</td>
                     <td className="border px-2 py-1">{map.value}</td>
-                    <td className="border px-2 py-1">{map.transformation}</td>
+                    <td className="border px-2 py-1">{map.action}</td>
+                    <td className="border px-2 py-1">{map.explanation}</td>
                   </tr>
                 ))}
               </tbody>
@@ -115,16 +121,31 @@ const GenerateAnalysis: React.FC = () => {
           </section>
 
           {/* Beta Word Analysis */}
+         {/* Beta Word Mappings */}
           <section className="mb-6">
-            <h3 className="text-xl font-semibold mb-2">Beta Word Document</h3>
-            <p className="text-gray-700 mb-2">Transformation Notes: <i>{analysisResult.beta_word_data.transformation_notes}</i></p>
-            <p className="mb-2">Unmatched Paragraph Snippets:</p>
-            <ul className="list-disc ml-5 max-h-32 overflow-y-auto">
-              {analysisResult.beta_word_data.unmatched_beta_fields.slice(0, 3).map((text: string, idx: number) => (
-                <li key={idx} className="text-sm">{text}</li>
-              ))}
-            </ul>
+            <h3 className="text-xl font-semibold mb-2">Beta Word Field Mappings</h3>
+            <table className="w-full text-sm border border-gray-300">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border px-2 py-1">Alpha Field</th>
+                  <th className="border px-2 py-1">Matched Text</th>
+                  <th className="border px-2 py-1">Action</th>
+                  <th className="border px-2 py-1">Explanation</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analysisResult.state.beta_word_data.field_mappings.slice(0, 5).map((map: any, idx: number) => (
+                  <tr key={idx}>
+                    <td className="border px-2 py-1">{map.alpha_field}</td>
+                    <td className="border px-2 py-1">{map.matched_text}</td>
+                    <td className="border px-2 py-1">{map.action}</td>
+                    <td className="border px-2 py-1">{map.explanation}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </section>
+
         </div>
       )}
     </div>

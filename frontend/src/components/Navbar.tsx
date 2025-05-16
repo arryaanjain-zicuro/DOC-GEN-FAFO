@@ -1,6 +1,9 @@
 // src/components/Navbar.tsx
+
+//the navbar
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import SessionStatusButton from "./SessionStatusButton";
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
@@ -48,6 +51,10 @@ const Navbar: React.FC = () => {
         >
           Perform Analysis
         </button>
+      </div>
+      <div className="flex items-center space-x-4">
+        <SessionStatusButton />
+        {/* your existing Profile button */}
       </div>
 
       <button
