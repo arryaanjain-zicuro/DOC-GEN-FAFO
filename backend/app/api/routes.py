@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, Form, File, Request
+from fastapi import APIRouter, UploadFile, Form, File, Request, HTTPException
 from app.services.document_generator import generate_document
 from app.core.limiter import limiter  # You can remove this import if you don't need it anymore
 from parser.alpha_doc_parser import parse_alpha_document, test_gemini
@@ -12,7 +12,10 @@ from typing import List
 from app.services.excel_generator import fill_excel_generic
 
 from workflows.models.shared import TransformationState
+from workflows.models.memory.memory_snapshot import MemorySnapshot
 from workflows.transformation_graph import transformation_graph
+
+from app.memory.memory_store import get_snapshot
 
 router = APIRouter()
 
@@ -83,19 +86,35 @@ async def run_transformation(
     beta_word_path = save_file(beta_word_doc)
     beta_excel_path = save_file(beta_excel_doc)
 
-    # Initialize state
+    # ✅ Generate session ID
+    session_id = str(uuid.uuid4())
+
+    # ✅ Initialize state with session ID
     initial_state = TransformationState(
-        alpha_path= alpha_path,
-        beta_word_path= beta_word_path,
-        beta_excel_path= beta_excel_path
+        session_id=session_id,
+        alpha_path=alpha_path,
+        beta_word_path=beta_word_path,
+        beta_excel_path=beta_excel_path,
     )
 
     # Run LangGraph
     graph = transformation_graph()
     final_state = graph.invoke(initial_state)
 
-    return dict(final_state)
+    # ✅ Return full state along with session_id
+    return {
+        "session_id": session_id,
+        "state": dict(final_state)
+    }
 
+@router.get("/retrieve-session/{session_id}", response_model=MemorySnapshot)
+def retrieve_session(session_id: str):
+    try:
+        snapshot = get_snapshot(session_id)
+        return snapshot
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
 #route for app in parsing mode
 @router.post("/parsing-mode")
 async def parsing_mode(request: Request, files: List[UploadFile] = File(...)):
