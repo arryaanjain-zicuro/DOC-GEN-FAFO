@@ -28,15 +28,15 @@ Match ALPHA fields to BETA document content and describe how they are transforme
 Return a JSON object with:
 1. "field_mappings": list of mappings, where each item includes:
    - "alpha_field": name from ALPHA
-   - "beta_occurrence": the corresponding field/value found in the BETA document
-   - "transformation": description of formatting, rewriting, or other modification
+   - "beta_occurrence": the exact value found in the BETA document. Return this as a plain string, not a list or object
+   - "transformation": description of formatting, rewriting, or other modification. Return this as a plain string, not a list or object
    - "action": one of ["write", "append", "ignore"]
      - "write": direct insertion from ALPHA
      - "append": added to pre-existing text
      - "ignore": not used in generation
    - "explanation": a sentence explaining why this mapping and action makes sense
 
-2. "unmatched_beta_fields": BETA content not clearly derived from ALPHA.
+2. "unmatched_beta_fields": BETA content not clearly derived from ALPHA. Answer by a list of string.
 
 3. "transformation_notes": general observations about formatting, formulae, or templating patterns.
 
