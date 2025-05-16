@@ -14,10 +14,10 @@ rate_limiter = GeminiRateLimiter(rate_limit_per_minute=20)
 
 # ---------- UTILITY HELPERS ----------
 
-def send_to_gemini(prompt: str, retries: int = 3) -> str:
+def send_to_gemini(prompt: str, retries: int = 3, key: str = "parsing") -> str:
     for attempt in range(retries):
         try:
-            rate_limiter.wait()
+            rate_limiter.wait(key)  # Updated to include key
             response = model.generate_content(prompt)
             return response.text
         except Exception as e:
@@ -25,6 +25,7 @@ def send_to_gemini(prompt: str, retries: int = 3) -> str:
             if attempt == retries - 1:
                 raise
             time.sleep(2)
+
 
 def extract_docx_fields(docx_path: str) -> List[Dict[str, str]]:
     doc = docx.Document(docx_path)
