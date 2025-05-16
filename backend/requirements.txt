@@ -24,4 +24,6 @@ langgraph
 langchain  
 
 ratelimit
+psycopg2-binary
+
 
