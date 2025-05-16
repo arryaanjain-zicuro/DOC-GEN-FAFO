@@ -14,26 +14,35 @@ def build_comparison_prompt(alpha_fields: Any, beta_raw_data: Dict[str, Any]) ->
     )    
     beta_json = json.dumps(beta_raw_data, indent=2)
     return f"""
-You are an AI tasked with comparing an ALPHA template (base document fields) to a BETA Word document.
+You are an AI system comparing an ALPHA document (base structure) to a BETA Word document.
 
 ALPHA (structured fields):
 {alpha_json}
 
-BETA (raw extracted Word content):
+BETA (extracted Word content):
 {beta_json}
 
-Your output should be a JSON object with:
-1. "field_mappings": list of objects, each with:
+Your task:
+Match ALPHA fields to BETA document content and describe how they are transformed or reused.
+
+Return a JSON object with:
+1. "field_mappings": list of mappings, where each item includes:
    - "alpha_field": name from ALPHA
-   - "beta_occurrence": actual occurrence in BETA
-   - "transformation": description of formatting or transformation applied
+   - "beta_occurrence": the corresponding field/value found in the BETA document
+   - "transformation": description of formatting, rewriting, or other modification
+   - "action": one of ["write", "append", "ignore"]
+     - "write": direct insertion from ALPHA
+     - "append": added to pre-existing text
+     - "ignore": not used in generation
+   - "explanation": a sentence explaining why this mapping and action makes sense
 
-2. "unmatched_beta_fields": any values in BETA not clearly derived from ALPHA.
+2. "unmatched_beta_fields": BETA content not clearly derived from ALPHA.
 
-3. "transformation_notes": general notes about patterns or formulas used.
+3. "transformation_notes": general observations about formatting, formulae, or templating patterns.
 
-Return **only valid JSON**. Do not include markdown or commentary.
+Return **valid JSON only** — no markdown, no commentary.
 """
+
 
 def parse_beta_word(beta_path: str, alpha_data: ParsedAlphaDocument) -> ParsedBetaWordDocument:
     beta_raw_data = extract_from_docx(beta_path)
