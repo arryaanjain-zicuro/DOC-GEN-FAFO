@@ -6,6 +6,7 @@ from workflows.models.betaExcel.beta_excel_models import ParsedBetaExcelDocument
 from workflows.models.betaWord.beta_word_models import ParsedBetaWordDocument
 
 class TransformationState(BaseModel):
+    session_id: Optional[str] = None  # Needed for memory
     # Input paths
     alpha_path: Optional[str]
     beta_word_path: Optional[str]
