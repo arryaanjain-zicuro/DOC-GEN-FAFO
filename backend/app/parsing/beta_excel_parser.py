@@ -50,13 +50,15 @@ def parse_beta_excel(excel_path: str, alpha_data: ParsedAlphaDocument) -> Parsed
     beta_excel_data = extract_excel_content(excel_path)
     prompt = build_excel_comparison_prompt(alpha_data.inferred_fields, beta_excel_data)
 
-    gemini_response = send_prompt(prompt)
+    gemini_response = send_prompt(prompt, usage_key="beta_word_parser")
     cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", gemini_response.strip(), flags=re.IGNORECASE)
 
     try:
         result = json.loads(cleaned)
     except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON from Gemini in Excel parser: {e}")
+         print("Raw Gemini response that caused JSON error:", cleaned, flush=True)
+         print(gemini_response[:1000])  # Truncate to avoid flooding logs
+         raise ValueError(f"Invalid JSON from Gemini in Excel parser: {e}")
 
     return ParsedBetaExcelDocument(
         raw_data=beta_excel_data,

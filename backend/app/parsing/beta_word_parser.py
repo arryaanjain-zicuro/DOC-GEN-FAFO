@@ -28,8 +28,8 @@ Match ALPHA fields to BETA document content and describe how they are transforme
 Return a JSON object with:
 1. "field_mappings": list of mappings, where each item includes:
    - "alpha_field": name from ALPHA
-   - "beta_occurrence": the exact value found in the BETA document. Return this as a plain string, not a list or object
-   - "transformation": description of formatting, rewriting, or other modification. Return this as a plain string, not a list or object
+   - "beta_occurrence": the exact value found in the BETA , **return as a string** 
+   - "transformation": description of formatting, rewriting, or other modification
    - "action": one of ["write", "append", "ignore"]
      - "write": direct insertion from ALPHA
      - "append": added to pre-existing text
@@ -47,12 +47,13 @@ Return **valid JSON only** — no markdown, no commentary.
 def parse_beta_word(beta_path: str, alpha_data: ParsedAlphaDocument) -> ParsedBetaWordDocument:
     beta_raw_data = extract_from_docx(beta_path)
     prompt = build_comparison_prompt(alpha_data.inferred_fields, beta_raw_data)
-    gemini_response = send_prompt(prompt)
+    gemini_response = send_prompt(prompt,usage_key="beta_excel_parser")
     cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", gemini_response.strip(), flags=re.IGNORECASE)
 
     try:
         result = json.loads(cleaned)
     except json.JSONDecodeError as e:
+        print("Error even after clean response: ",cleaned, flush=True)
         raise ValueError(f"Invalid JSON from Gemini in Word parser: {e}")
 
     return ParsedBetaWordDocument(

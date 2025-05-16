@@ -34,13 +34,14 @@ Return only valid JSON. No markdown, no explanations.
 def parse_alpha_document(docx_path: str) -> ParsedAlphaDocument:
     raw_data = extract_from_docx(docx_path)
     prompt = build_analysis_prompt(raw_data)
-    gemini_response = send_prompt(prompt)
+    gemini_response = send_prompt(prompt, usage_key="alpha_parser")
 
     cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", gemini_response.strip(), flags=re.IGNORECASE)
 
     try:
         structured = json.loads(cleaned)
     except json.JSONDecodeError as e:
+        print("Error ",cleaned, flush = True)
         raise ValueError(f"Invalid Gemini JSON: {e}")
 
     return ParsedAlphaDocument(
