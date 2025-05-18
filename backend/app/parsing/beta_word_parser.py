@@ -9,39 +9,55 @@ from workflows.models.betaWord.shared.field_mapping import BetaWordFieldMapping
 from workflows.models.alpha.alpha_models import ParsedAlphaDocument
 
 def build_comparison_prompt(alpha_fields: Any, beta_raw_data: Dict[str, Any]) -> str:
-    alpha_json = json.dumps(
-        [field.model_dump() for field in alpha_fields], indent=2
-    )    
-    beta_json = json.dumps(beta_raw_data, indent=2)
-    return f"""
-You are an AI system comparing an ALPHA document (base structure) to a BETA Word document.
+    from textwrap import dedent
+    alpha_json = json.dumps([f.model_dump() for f in alpha_fields], indent=2, ensure_ascii=False)
+    beta_json  = json.dumps(beta_raw_data,               indent=2, ensure_ascii=False)
 
-ALPHA (structured fields):
+    schema_block = """
+    ---SCHEMA---
+    {
+    "field_mappings":[
+        {
+        "alpha_field":"str",
+        "beta_occurrence":"str",   // MUST be verbatim text from BETA, else ""
+        "transformation":"str",
+        "action":"write | append | ignore",
+        "explanation":"str"
+        }
+    ],
+    "unmatched_beta_fields":["str"],
+    "transformation_notes":"str"
+    }
+    ---END_SCHEMA---
+    """
+
+    rules = """
+    **Rules for `action`:**
+    • Use `"write"` **only if** the `beta_occurrence` string matches the Alpha value
+    *exactly* (case-insensitive, whitespace-normalised).  
+    • Use `"append"` when the Alpha value appears **inside** a longer Beta string.  
+    • Otherwise return `"ignore"` and leave `beta_occurrence` as an empty string.
+
+    If a field is ignored, say why in `explanation` (“value not found”).
+    Return valid JSON only.
+    """
+    prompt = f"{schema_block}\n{rules}\n\nALPHA ↓\n{alpha_json}\n\nBETA ↓\n{beta_json}"
+
+
+    return f"""{prompt}
+
+You are an AI system comparing an **ALPHA** document (structured) to a **BETA** Word document.
+
+ALPHA fields ↓
 {alpha_json}
 
-BETA (extracted Word content):
+BETA extracted content ↓
 {beta_json}
 
-Your task:
-Match ALPHA fields to BETA document content and describe how they are transformed or reused.
-
-Return a JSON object with:
-1. "field_mappings": list of mappings, where each item includes:
-   - "alpha_field": name from ALPHA
-   - "beta_occurrence": the exact value found in the BETA , **return as a string** 
-   - "transformation": description of formatting, rewriting, or other modification
-   - "action": one of ["write", "append", "ignore"]
-     - "write": direct insertion from ALPHA
-     - "append": added to pre-existing text
-     - "ignore": not used in generation
-   - "explanation": a sentence explaining why this mapping and action makes sense
-
-2. "unmatched_beta_fields": BETA content not clearly derived from ALPHA. Answer by a list of string.
-
-3. "transformation_notes": general observations about formatting, formulae, or templating patterns.
-
-Return **valid JSON only** — no markdown, no commentary.
+Output **exactly** one JSON object that conforms to the schema above.
+Nothing else – no Markdown, no comments.
 """
+
 
 
 def parse_beta_word(beta_path: str, alpha_data: ParsedAlphaDocument) -> ParsedBetaWordDocument:
