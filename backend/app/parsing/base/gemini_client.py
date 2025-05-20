@@ -18,7 +18,7 @@ def send_prompt(prompt: str, usage_key: str = "default", retries: int = 5) -> st
             response = model.generate_content(prompt)
             return response.text
         except Exception as e:
-            print(f"[Gemini Attempt {attempt+1} | Key: {usage_key}] Error: {e}")
+            print(f"[Gemini Attempt {attempt+1} | Key: {usage_key}] Error: {e}", flush=True)
             if attempt == retries - 1:
                 raise
             time.sleep(2)
